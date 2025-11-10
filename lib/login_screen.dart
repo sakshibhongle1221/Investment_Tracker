@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen>{
   Widget build(BuildContext context) {
     return Scaffold( 
       appBar: AppBar(
-        title: const Text('InvestorTrack Login'),
+        title: const Text('InvestmentTracking Login'),
         centerTitle: true,
       ),
       body: Padding(
@@ -103,6 +103,23 @@ class _LoginScreenState extends State<LoginScreen>{
               ),
               ],
               ),                 
+            ),
+
+            const SizedBox(height: 16), 
+            ElevatedButton(
+              onPressed: () {
+                
+                Navigator.pushReplacementNamed(context, '/guest_dashboard');
+              },
+              child: const Column(
+                children: [
+                  Text("Or"),
+                  Text(
+                    "Continue as Guest",
+                    style: TextStyle(fontWeight: FontWeight.bold,fontSize:22),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

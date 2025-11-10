@@ -13,10 +13,10 @@ class MainScreen extends StatelessWidget{
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('InvestorTrack'),
+          title: const Text('InvestmentTracker'),
           elevation:0,
           backgroundColor: Colors.white,
-          foregroundColor: Colors.black, //titles & icons
+          foregroundColor: Colors.black, 
           actions: [
             IconButton(icon: const Icon(Icons.search),onPressed: (){}),
             IconButton(icon: const Icon(Icons.person_outline),onPressed: (){}),

@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
-import 'services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'services/guest_storage_service.dart'; 
 
-class TransactionsScreen extends StatefulWidget {
-  const TransactionsScreen({super.key});
+
+
+class GuestTransactionScreen extends StatefulWidget {
+  const GuestTransactionScreen({super.key});
 
   @override
-  State<TransactionsScreen> createState() => _TransactionsScreenState();
+  State<GuestTransactionScreen> createState() => _GuestTransactionScreenState();
 }
 
-class _TransactionsScreenState extends State<TransactionsScreen> {
-  final ApiService _apiService = ApiService();
+class _GuestTransactionScreenState extends State<GuestTransactionScreen> {
+  final GuestStorageService _storageService = GuestStorageService();
   bool _isLoading = true;
-  List<dynamic> _transactions = [];
+  List<GuestTransaction> _transactions = [];
   List<String> _userCategories = [];
   final List<String> _transactionTypes = ['expense', 'income'];
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _fetchData(); 
   }
 
   Future<void> _fetchData() async {
@@ -27,34 +29,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       _isLoading = true;
     });
     try {
-      final results = await Future.wait([
-        _apiService.getTransactions(),
-        _apiService.getTransactionCategories(), 
-      ]);
-
-      setState(() {
-        _transactions = results[0] as List<dynamic>;
-        _userCategories = (results[1] as List<dynamic>).cast<String>();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load screen data: $e')),
-        );
-      }
-    }
-  }
-
-
-  Future<void> _fetchTransactions() async {
-    try {
-      final transactions = await _apiService.getTransactions();
+      
+      final transactions = await _storageService.getTransactions();
+      final categories = await _storageService.getTransactionCategories();
+      
       setState(() {
         _transactions = transactions;
+        _userCategories = categories;
         _isLoading = false;
       });
     } catch (e) {
@@ -62,20 +43,20 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load transactions: $e')),
+         ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load local transactions: $e')),
         );
       }
     }
   }
 
-  Future<void> _showAddTransactionDialog() async {
+  Future<void> _showAddGuestTransactionDialog() async {
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
-    final newCategoryController =
-        TextEditingController();
+    final newCategoryController = TextEditingController();
     String? selectedType = 'expense';
 
+    
     List<String> categoryOptions = [..._userCategories, "+ Add New Category"];
     String? selectedCategory;
     bool showNewCategoryField = false;
@@ -84,14 +65,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       selectedCategory = "+ Add New Category";
       showNewCategoryField = true;
     } else {
-      selectedCategory = categoryOptions.first; 
+      selectedCategory = categoryOptions.first;
     }
 
     return showDialog<void>(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setStateDialog) { 
             return AlertDialog(
               title: const Text('Add New Transaction'),
               content: SingleChildScrollView(
@@ -104,7 +85,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     TextField(
                       controller: amountController,
                       decoration: const InputDecoration(hintText: "Amount"),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
@@ -113,19 +94,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       items: _transactionTypes.map((String type) {
                         return DropdownMenuItem<String>(
                           value: type,
-                          child: Text(type.isNotEmpty
-                              ? type[0].toUpperCase() + type.substring(1)
-                              : ''),
+                          child: Text(type.isNotEmpty ? type[0].toUpperCase() + type.substring(1) : ''),
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
-                        setState(() {
+                        setStateDialog(() { 
                           selectedType = newValue;
                         });
                       },
                     ),
                     const SizedBox(height: 16),
-                    
                     
                     DropdownButtonFormField<String>(
                       value: selectedCategory,
@@ -137,7 +115,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         );
                       }).toList(),
                       onChanged: (String? newValue) {
-                        setState(() {
+                        setStateDialog(() { 
                           selectedCategory = newValue;
                           if (newValue == "+ Add New Category") {
                             showNewCategoryField = true;
@@ -157,7 +135,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           autofocus: true,
                         ),
                       ),
-                    
                   ],
                 ),
               ),
@@ -170,7 +147,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 ),
                 TextButton(
                   child: const Text('Save'),
-                  onPressed: () async {          
+                  onPressed: () async { 
+                    
                     String finalCategory;
                     if (showNewCategoryField) {
                       finalCategory = newCategoryController.text;
@@ -178,31 +156,44 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       finalCategory = selectedCategory ?? '';
                     }
 
-                    if (amountController.text.isEmpty ||
-                        finalCategory.isEmpty ||
-                        selectedType == null) {
+                    if (amountController.text.isEmpty || finalCategory.isEmpty || selectedType == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Please fill all fields')),
                       );
                       return;
                     }
+                    
+                    final double? amount = double.tryParse(amountController.text);
+                    if (amount == null) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a valid amount')),
+                      );
+                      return;
+                    }
+
+                    final newTransaction = GuestTransaction(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      description: descriptionController.text.isNotEmpty ? descriptionController.text : 'No description',
+                      amount: amount,
+                      type: selectedType!,
+                      category: finalCategory,
+                      createdAt: DateTime.now(),
+                    );
+
                     try {
-                      await _apiService.addTransaction(
-                          double.parse(amountController.text),
-                          selectedType!,
-                          finalCategory,
-                          descriptionController.text.isNotEmpty
-                              ? descriptionController.text
-                              : 'No description'); 
+                      
+                      await _storageService.addTransaction(newTransaction);
+                      
+                      
+                      _fetchData(); 
+
                       if (mounted) {
                         Navigator.of(context).pop();
-                        _fetchData();
                       }
                     } catch (e) {
-                      if (mounted) {
+                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text('Failed to add transaction: $e')),
+                          SnackBar(content: Text('Failed to save transaction: $e')),
                         );
                       }
                     }
@@ -219,54 +210,47 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
+      appBar: AppBar(
+        title: const Text('All Transactions (Guest)'),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
+          : _transactions.isEmpty
+            ? const Center(child: Text('No transactions added yet.'))
+            : ListView.builder(
               padding: const EdgeInsets.all(16.0),
               itemCount: _transactions.length,
               itemBuilder: (context, index) {
                 final transaction = _transactions[index];
-
-                final DateTime date = DateTime.parse(transaction['created_at']);
-                final String formattedDate =
-                    DateFormat('MMMM d, yyyy').format(date);
+                final String formattedDate = DateFormat('MMMM d, yyyy').format(transaction.createdAt);
+                
+                final transactionMap = transaction.toMap(); 
 
                 return Card(
                   elevation: 2.0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                   child: ListTile(
                     leading: Icon(
-                      transaction['type'] == 'income'
-                          ? Icons.arrow_upward
-                          : Icons.arrow_downward,
-                      color: transaction['type'] == 'income'
-                          ? Colors.green
-                          : Colors.red,
+                      transactionMap['type'] == 'income' ? Icons.arrow_upward : Icons.arrow_downward,
+                      color: transactionMap['type'] == 'income' ? Colors.green : Colors.red,
                     ),
-                    title: Text(transaction['description'] ?? 'No description',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(
-                        "$formattedDate - ${transaction['category'] ?? 'Uncategorized'}"), 
+                    title: Text(transactionMap['description'] ?? 'No description', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text("$formattedDate - ${transactionMap['category']}"), 
                     trailing: Text(
-                      '₹${transaction['amount']}',
+                      '₹${transactionMap['amount']}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: transaction['type'] == 'income'
-                            ? Colors.green
-                            : Colors.red,
+                        color: transactionMap['type'] == 'income' ? Colors.green : Colors.red,
                       ),
                     ),
                   ),
                 );
               },
             ),
-
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddTransactionDialog,
+        onPressed: _showAddGuestTransactionDialog,
         tooltip: 'Add Transaction',
         child: const Icon(Icons.add),
       ),

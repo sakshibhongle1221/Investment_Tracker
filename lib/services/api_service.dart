@@ -326,5 +326,30 @@ Future<List<dynamic>> getInvestmentPerformance() async{
   }
 }
 
+Future<List<dynamic>> getTransactionCategories() async{
+  try {
+      final token = await _storage.read(key: 'token');
+      final userId = await _storage.read(key: 'userId');
 
+      if (token == null) throw Exception('User not logged in. Token not found.');
+      if (userId == null) throw Exception('User ID not found.');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/api/categories/$userId'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((item) => item as String).toList();
+      } else {
+        final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+        throw Exception(data['message'] ?? 'Failed to load categories.');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to server. Error:$e');
+    }
+}
 }

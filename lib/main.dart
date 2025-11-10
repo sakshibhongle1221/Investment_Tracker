@@ -6,6 +6,10 @@ import 'dashboard_screen.dart';
 import 'budgets_screen.dart';
 import 'goals_screen.dart';
 import 'theme.dart';
+import 'guest_budget_screen.dart';
+import 'guest_goal_screen.dart';
+import 'guest_transaction_screen.dart';
+import 'guest_dashboard_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,6 +54,10 @@ class MyApp extends StatelessWidget {
         '/dashboard':(context) => const MainScreen(),
         '/budgets':(context) => const BudgetsScreen(),
         '/goals':(context) => const GoalsScreen(),
+        '/guest_budget': (context) => const GuestBudgetScreen(),
+        '/guest_goal': (context) => const GuestGoalScreen(),
+        '/guest_transaction': (context) => const GuestTransactionScreen(),
+        '/guest_dashboard':(context) => const GuestDashboardScreen(),
       },
     );
   }
