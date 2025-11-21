@@ -19,7 +19,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
   Map<String, dynamic> _dashboardStats = {};
   
   
-  List<dynamic> _investmentData = [
+/*  List<dynamic> _investmentData = [
       {'value': 1000.0},
       {'value': 1200.0},
       {'value': 1100.0},
@@ -29,7 +29,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       {'value': 1800.0},
       {'value': 1700.0},
   ];
-
+*/
   @override
   void initState() {
     super.initState();
@@ -93,6 +93,87 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
       }
     }
   }
+
+Future<void> _showAddInformationDialog() async {
+  final amountController = TextEditingController();
+  final descriptionController = TextEditingController(text: 'Income');
+
+  return showDialog<void>(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Add Income'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: <Widget>[
+                  TextField(
+                    controller: amountController,
+                    decoration: const InputDecoration(hintText: "Income Amount"),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(hintText: "Description (e.g., Salary)"),
+                  ),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+              TextButton(
+                child: const Text('Save'),
+                onPressed: () async {
+                  if (amountController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please fill the amount field')),
+                    );
+                    return;
+                  }
+
+                  final double? amount = double.tryParse(amountController.text);
+                  if (amount == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Please enter a valid amount')),
+                    );
+                    return;
+                  }
+
+                  final newTransaction = GuestTransaction(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    description: descriptionController.text.isEmpty
+                        ? "Income"
+                        : descriptionController.text,
+                    amount: amount,
+                    type: "income",
+                    category: "Income",
+                    createdAt: DateTime.now(),
+                  );
+
+                  await _storageService.addTransaction(newTransaction);
+
+                  if (mounted) {
+                    Navigator.of(context).pop();
+                    _fetchData();
+                  }
+                },
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +355,7 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                   ),
                 const SizedBox(height: 16),
                 
-                
+            /*    
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -313,9 +394,15 @@ class _GuestDashboardScreenState extends State<GuestDashboardScreen> {
                       ],
                     ),
                   ),
-                ),
+                ), */
                 const SizedBox(height: 16),
               ],
+            ),
+
+            floatingActionButton: FloatingActionButton(
+                onPressed: _showAddInformationDialog,
+                tooltip: 'Add Information',
+                child: const Icon(Icons.add),
             ),
     );
   }
