@@ -5,7 +5,7 @@
 **InvestmentTracker** is a personal finance tracking web application built with **Flutter (for Web)** on the frontend and a **Node.js + PostgreSQL** backend.  
 It’s inspired by finance apps and designed to help users **manage finances**, **track expenses**, **set budgets**, and **visualize goals**.
 
-The app includes a complete **Guest Mode** for instant use, powered by local mock data for an interactive experience.  
+The app includes a complete **Guest Mode** for instant use for an interactive experience.  
 The full version includes **secure user authentication**, **transaction management**, **budget creation**, and **goal tracking**, all connected to a live backend API.
 
 ---
